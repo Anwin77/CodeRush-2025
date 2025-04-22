@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Report Summarizer - Medora</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#0D9488',    // Teal 600
+                        secondary: '#0F766E',  // Teal 700
+                        accent: '#2DD4BF',     // Teal 400
+                        dark: '#134E4A',       // Teal 800
+                        light: '#99F6E4',      // Teal 200
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #0D9488 0%, #0F766E 50%, #134E4A 100%);
+            background-size: 200% 200%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .preview-area {
+            transition: all 0.3s ease;
+            border: 2px dashed #e2e8f0;
+            border-radius: 0.5rem;
+        }
+
+        .preview-area.dragover {
+            border-color: #0D9488;
+            background-color: rgba(13, 148, 136, 0.1);
+        }
+
+        .preview-area textarea {
+            width: 100%;
+            height: 100%;
+            resize: none;
+            border: none;
+            outline: none;
+            padding: 1rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .feature-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .feature-icon:hover {
+            transform: scale(1.2);
+        }
+
+        .result-card {
+            transition: all 0.5s ease;
+            transform-origin: center;
+        }
+
+        .result-card.animate-in {
+            animation: result-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes result-in {
+            0% { 
+                opacity: 0;
+                transform: scale(0.8) translateY(20px);
+            }
+            100% { 
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+        }
+
+        .floating-button {
+            animation: floating-button 4s ease-in-out infinite;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        @keyframes floating-button {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(2deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        .leaf {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2399F6E4"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.71 1.71C9.53 16.69 11.84 10 20 10V8H17M7 8C16 10 18.1 16.17 20.18 21.34l-1.71 1.71C14.47 16.69 12.16 10 4 10V8H7Z"/></svg>') no-repeat center center;
+            background-size: contain;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .heart-path {
+            fill: none;
+            stroke: #0D9488;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 8px rgba(13, 148, 136, 0.5));
+        }
+
+        .pulse-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid #0D9488;
+            border-radius: 50%;
+            animation: pulse-ring 2s ease-out infinite;
+            opacity: 0;
+        }
+
+        .glow {
+            box-shadow: 0 0 15px rgba(13, 148, 136, 0.5);
+        }
+
+        .glow:hover {
+            box-shadow: 0 0 25px rgba(13, 148, 136, 0.7);
+        }
+    </style>
+</head>
+<body class="font-poppins bg-gray-50">
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="index.html" class="text-2xl font-bold text-primary flex items-center">
+                        <div class="logo-container">
+                            <div class="pulse-ring"></div>
+                            <svg class="animated-heart" viewBox="0 0 24 24">
+                                <path class="heart-path" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                        </div>
+                        Medora
+                    </a>
+                </div>
+                <div class="flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-600 hover:text-primary transition-colors">Home</a>
+                    <a href="index.html#models" class="text-gray-600 hover:text-primary transition-colors">Models</a>
+                    <a href="index.html#about" class="text-gray-600 hover:text-primary transition-colors">About</a>
+                    <a href="index.html#mission" class="text-gray-600 hover:text-primary transition-colors">Mission</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-24 pb-32 gradient-bg relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center">
+                <h1 class="text-5xl font-bold text-white mb-8 opacity-0" id="hero-title">
+                    Medical Report Summarizer
+                </h1>
+                <p class="text-xl text-white/90 mb-12 max-w-3xl mx-auto opacity-0" id="hero-text">
+                    AI-powered summarization of medical reports using advanced natural language processing
+                </p>
+                <div class="opacity-0" id="hero-button">
+                    <a href="#model-interface" class="bg-white text-primary px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors inline-block shadow-lg floating-button">
+                        Try the Model
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div id="particles-container" class="absolute inset-0 overflow-hidden"></div>
+        <div id="leaves-container" class="absolute inset-0 overflow-hidden"></div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <!-- Model Information -->
+                <div class="space-y-8 opacity-0" id="model-info">
+                    <div class="bg-white rounded-xl p-8 shadow-lg">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-6">About This Model</h2>
+                        <p class="text-gray-600 mb-6">Our Medical Report Summarizer model is designed to assist healthcare professionals in quickly understanding and extracting key information from medical reports. Using advanced natural language processing, it can generate concise summaries while maintaining medical accuracy.</p>
+                        
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4">Key Features</h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-center text-gray-600 feature-item">
+                                <svg class="w-6 h-6 text-primary mr-3 feature-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Intelligent extraction of key medical information</span>
+                            </li>
+                            <li class="flex items-center text-gray-600 feature-item">
+                                <svg class="w-6 h-6 text-primary mr-3 feature-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Maintains medical terminology and accuracy</span>
+                            </li>
+                            <li class="flex items-center text-gray-600 feature-item">
+                                <svg class="w-6 h-6 text-primary mr-3 feature-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Customizable summary length and focus</span>
+                            </li>
+                            <li class="flex items-center text-gray-600 feature-item">
+                                <svg class="w-6 h-6 text-primary mr-3 feature-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Support for various medical report formats</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Model Interface -->
+                <div class="bg-white rounded-xl p-8 shadow-lg opacity-0" id="model-interface">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6">Try the Model</h2>
+                    <div class="space-y-6">
+                        <div class="preview-area h-64 flex items-center justify-center" id="preview">
+                            <div class="text-center" id="upload-prompt">
+                                <svg class="w-12 h-12 text-gray-400 mx-auto mb-4 floating" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <p class="text-gray-500">Paste your medical report here or click to upload</p>
+                            </div>
+                            <textarea id="report-input" class="hidden" placeholder="Paste your medical report here..."></textarea>
+                        </div>
+                        <button id="summarize-button" class="w-full bg-primary text-white py-3 px-6 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed glow">
+                            Generate Summary
+                        </button>
+                        <div id="summary-result" class="text-gray-600"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Create particles for the hero section
+        function createParticles() {
+            const container = document.getElementById('particles-container');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                const size = Math.random() * 4 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+                
+                const duration = Math.random() * 10 + 10;
+                
+                container.appendChild(particle);
+                
+                anime({
+                    targets: particle,
+                    translateX: function() {
+                        return anime.random(-100, 100);
+                    },
+                    translateY: function() {
+                        return anime.random(-100, 100);
+                    },
+                    opacity: [0.2, 0.8, 0.2],
+                    duration: duration * 1000,
+                    easing: 'linear',
+                    loop: true,
+                    delay: Math.random() * 2000
+                });
+            }
+        }
+
+        // Create floating leaves
+        function createLeaves() {
+            const container = document.getElementById('leaves-container');
+            const leafCount = 15;
+            
+            for (let i = 0; i < leafCount; i++) {
+                const leaf = document.createElement('div');
+                leaf.classList.add('leaf');
+                
+                const size = Math.random() * 15 + 15;
+                leaf.style.width = `${size}px`;
+                leaf.style.height = `${size}px`;
+                
+                leaf.style.left = `${Math.random() * 100}%`;
+                leaf.style.top = `${Math.random() * 100}%`;
+                
+                leaf.style.transform = `rotate(${Math.random() * 360}deg)`;
+                
+                container.appendChild(leaf);
+                
+                anime({
+                    targets: leaf,
+                    translateX: function() {
+                        return anime.random(-200, 200);
+                    },
+                    translateY: function() {
+                        return anime.random(-200, 200);
+                    },
+                    rotate: function() {
+                        return anime.random(-360, 360);
+                    },
+                    opacity: [0.3, 0.7, 0.3],
+                    duration: function() {
+                        return anime.random(10000, 20000);
+                    },
+                    easing: 'easeInOutQuad',
+                    loop: true,
+                    delay: Math.random() * 5000
+                });
+            }
+        }
+
+        // Enhanced Animations
+        anime({
+            targets: '#hero-title',
+            opacity: [0, 1],
+            translateY: [50, 0],
+            duration: 1000,
+            easing: 'easeOutElastic(1, .5)'
+        });
+
+        anime({
+            targets: '#hero-text',
+            opacity: [0, 1],
+            translateY: [50, 0],
+            duration: 1000,
+            delay: 200,
+            easing: 'easeOutElastic(1, .5)'
+        });
+
+        anime({
+            targets: '#hero-button',
+            opacity: [0, 1],
+            translateY: [50, 0],
+            duration: 1000,
+            delay: 400,
+            easing: 'easeOutElastic(1, .5)'
+        });
+
+        anime({
+            targets: ['#model-info', '#model-interface'],
+            opacity: [0, 1],
+            translateY: [50, 0],
+            duration: 1000,
+            delay: anime.stagger(200),
+            easing: 'easeOutElastic(1, .5)'
+        });
+
+        // Animate feature items with staggered delay
+        anime({
+            targets: '.feature-item',
+            opacity: [0, 1],
+            translateX: [-20, 0],
+            duration: 800,
+            delay: anime.stagger(100),
+            easing: 'easeOutQuad'
+        });
+
+        // Report Input and Preview
+        const preview = document.getElementById('preview');
+        const uploadPrompt = document.getElementById('upload-prompt');
+        const reportInput = document.getElementById('report-input');
+        const summarizeButton = document.getElementById('summarize-button');
+        const summaryResult = document.getElementById('summary-result');
+
+        preview.addEventListener('click', () => {
+            uploadPrompt.style.display = 'none';
+            reportInput.classList.remove('hidden');
+            reportInput.focus();
+        });
+        
+        reportInput.addEventListener('input', () => {
+            if (reportInput.value.trim()) {
+                summarizeButton.disabled = false;
+            } else {
+                summarizeButton.disabled = true;
+            }
+        });
+
+        summarizeButton.addEventListener('click', async () => {
+            if (!reportInput.value.trim()) {
+                summaryResult.innerHTML = 'Please enter a medical report to summarize.';
+                return;
+            }
+
+            summarizeButton.disabled = true;
+            
+            anime({
+                targets: summarizeButton,
+                scale: [1, 0.95, 1],
+                duration: 300,
+                easing: 'easeInOutQuad'
+            });
+            
+            summaryResult.innerHTML = '<div class="text-primary pulse">Generating summary...</div>';
+
+            try {
+                const response = await fetch('http://localhost:5000/summarize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: reportInput.value
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const summary = data.summary;
+
+                let resultHTML = `
+                    <div class="bg-gray-50 rounded-lg p-6 mt-4 result-card">
+                        <div class="text-xl font-semibold text-gray-900 mb-4">Summary</div>
+                        <div class="text-gray-700 whitespace-pre-wrap">${summary}</div>
+                    </div>
+                `;
+
+                summaryResult.innerHTML = resultHTML;
+                
+                const resultCard = summaryResult.querySelector('.result-card');
+                if (resultCard) {
+                    resultCard.classList.add('animate-in');
+                }
+
+            } catch (error) {
+                console.error('Error during summarization:', error);
+                summaryResult.innerHTML = '<div class="text-red-500">Error generating summary. Please try again.</div>';
+            } finally {
+                summarizeButton.disabled = false;
+            }
+        });
+
+        // Initialize particles and leaves when the page loads
+        window.addEventListener('load', function() {
+            createParticles();
+            createLeaves();
+            
+            // Animate the heart logo
+            const heartPath = document.querySelector('.heart-path');
+            const heartSVG = document.querySelector('.animated-heart');
+            
+            heartPath.style.strokeDasharray = '100';
+            heartPath.style.strokeDashoffset = '100';
+            
+            anime({
+                targets: '.heart-path',
+                strokeDashoffset: [100, 0],
+                duration: 1500,
+                easing: 'easeInOutSine',
+                complete: function() {
+                    anime({
+                        targets: '.animated-heart',
+                        scale: [1, 1.15, 1, 1.15, 1],
+                        duration: 1000,
+                        loop: true,
+                        easing: 'easeInOutQuad',
+                        delay: 500
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

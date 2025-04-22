@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skin Cancer Detection - Medora</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#10B981',    // Emerald 500
+                        secondary: '#059669',  // Emerald 600
+                        accent: '#34D399',     // Emerald 400
+                        dark: '#065F46',       // Emerald 800
+                        light: '#A7F3D0',      // Emerald 200
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #10B981 0%, #059669 50%, #065F46 100%);
+            background-size: 200% 200%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .preview-area {
+            transition: all 0.3s ease;
+            border: 2px dashed #e2e8f0;
+            border-radius: 0.5rem;
+        }
+
+        .preview-area.dragover {
+            border-color: #10B981;
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+
+        .preview-area img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .feature-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .feature-icon:hover {
+            transform: scale(1.2);
+        }
+
+        .result-card {
+            transition: all 0.5s ease;
+            transform-origin: center;
+        }
+
+        .result-card.animate-in {
+            animation: result-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes result-in {
+            0% { 
+                opacity: 0;
+                transform: scale(0.8) translateY(20px);
+            }
+            100% { 
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+        }
+
+        .floating-button {
+            animation: floating-button 4s ease-in-out infinite;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        @keyframes floating-button {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(2deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        .leaf {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23A7F3D0"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.71 1.71C9.53 16.69 11.84 10 20 10V8H17M7 8C16 10 18.1 16.17 20.18 21.34l-1.71 1.71C14.47 16.69 12.16 10 4 10V8H7Z"/></svg>') no-repeat center center;
+            background-size: contain;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .heart-path {
+            fill: none;
+            stroke: #10B981;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5));
+        }
+
+        .pulse-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid #10B981;
+            border-radius: 50%;
+            animation: pulse-ring 2s ease-out infinite;
+            opacity: 0;
+        }
+
+        .glow {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+        }
+
+        .glow:hover {
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.7);
+        }
+    </style>
+</head>
+<body class="font-poppins bg-gray-50">
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="index.html" class="text-2xl font-bold text-primary">Medora</a>
+                </div>
+                <div class="flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-600 hover:text-primary transition-colors">Home</a>
+                    <a href="index.html#models" class="text-gray-600 hover:text-primary transition-colors">Models</a>
+                    <a href="index.html#about" class="text-gray-600 hover:text-primary transition-colors">About</a>
+                    <a href="index.html#mission" class="text-gray-600 hover:text-primary transition-colors">Mission</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-24 pb-32 gradient-bg relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center">
+                <h1 class="text-5xl font-bold text-white mb-8 opacity-0" id="hero-title">
+                    Skin Cancer Detection
+                </h1>
+                <p class="text-xl text-white/90 mb-12 max-w-3xl mx-auto opacity-0" id="hero-text">
+                    Advanced AI-powered analysis for skin lesions using cutting-edge deep learning algorithms
+                </p>
+                <div class="opacity-0" id="hero-button">
+                    <a href="#model-interface" class="bg-white text-primary px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors inline-block shadow-lg floating-button">
+                        Try the Model
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div id="particles-container" class="absolute inset-0 overflow-hidden"></div>
+        <div id="leaves-container" class="absolute inset-0 overflow-hidden"></div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <!-- Model Information -->
+                <div class="space-y-8 opacity-0" id="model-info">
+                    <div class="bg-white rounded-xl p-8 shadow-lg">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-6">About This Model</h2>
+                        <p class="text-gray-600 mb-6">Our Skin Cancer Detection model is designed to assist healthcare professionals in analyzing skin lesions. Using advanced deep learning algorithms, it can identify potential signs of skin cancer and provide preliminary assessments.</p>
+                        
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4">Key Features</h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-center text-gray-600 feature-item">
+                                <svg class="w-6 h-6 text-primary mr-3 feature-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>High-accuracy detection of skin cancer types</span>
+                            </li>
+                            <li class="flex items-center text-gray-600 feature-item">
+                                <svg class="w-6 h-6 text-primary mr-3 feature-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Analysis of various skin lesion characteristics</span>
+                            </li>
+                            <li class="flex items-center text-gray-600 feature-item">
+                                <svg class="w-6 h-6 text-primary mr-3 feature-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Detailed confidence scores for predictions</span>
+                            </li>
+                            <li class="flex items-center text-gray-600 feature-item">
+                                <svg class="w-6 h-6 text-primary mr-3 feature-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Support for multiple image formats</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Model Interface -->
+                <div class="bg-white rounded-xl p-8 shadow-lg opacity-0" id="model-interface">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6">Try the Model</h2>
+                    <div class="space-y-6">
+                        <div class="preview-area h-64 flex items-center justify-center" id="preview">
+                            <div class="text-center" id="upload-prompt">
+                                <svg class="w-12 h-12 text-gray-400 mx-auto mb-4 floating" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <p class="text-gray-500">Drop a skin lesion image here or click to upload</p>
+                            </div>
+                        </div>
+                        <input type="file" id="image-input" accept="image/*" class="hidden">
+                        <button id="predict-button" class="w-full bg-primary text-white py-3 px-6 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed glow">
+                            Analyze Image
+                        </button>
+                        <div id="prediction-result" class="text-gray-600"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Create particles for the hero section
+        function createParticles() {
+            const container = document.getElementById('particles-container');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random size between 2 and 6 pixels
+                const size = Math.random() * 4 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Random position
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+                
+                // Random animation duration between 10 and 20 seconds
+                const duration = Math.random() * 10 + 10;
+                
+                // Add to container
+                container.appendChild(particle);
+                
+                // Animate the particle
+                anime({
+                    targets: particle,
+                    translateX: function() {
+                        return anime.random(-100, 100);
+                    },
+                    translateY: function() {
+                        return anime.random(-100, 100);
+                    },
+                    opacity: [0.2, 0.8, 0.2],
+                    duration: duration * 1000,
+                    easing: 'linear',
+                    loop: true,
+                    delay: Math.random() * 2000
+                });
+            }
+        }
+    
+        // Create floating leaves
+        function createLeaves() {
+            const container = document.getElementById('leaves-container');
+            const leafCount = 15;
+            
+            for (let i = 0; i < leafCount; i++) {
+                const leaf = document.createElement('div');
+                leaf.classList.add('leaf');
+                
+                // Random size between 15 and 30 pixels
+                const size = Math.random() * 15 + 15;
+                leaf.style.width = `${size}px`;
+                leaf.style.height = `${size}px`;
+                
+                // Random position
+                leaf.style.left = `${Math.random() * 100}%`;
+                leaf.style.top = `${Math.random() * 100}%`;
+                
+                // Random rotation
+                leaf.style.transform = `rotate(${Math.random() * 360}deg)`;
+                
+                // Add to container
+                container.appendChild(leaf);
+                
+                // Animate the leaf
+                anime({
+                    targets: leaf,
+                    translateX: function() {
+                        return anime.random(-200, 200);
+                    },
+                    translateY: function() {
+                        return anime.random(-200, 200);
+                    },
+                    rotate: function() {
+                        return anime.random(-360, 360);
+                    },
+                    opacity: [0.3, 0.7, 0.3],
+                    duration: function() {
+                        return anime.random(10000, 20000);
+                    },
+                    easing: 'easeInOutQuad',
+                    loop: true,
+                    delay: Math.random() * 5000
+                });
+            }
+        }
+    
+        // Enhanced Animations
+        anime({
+            targets: '#hero-title',
+            opacity: [0, 1],
+            translateY: [50, 0],
+            duration: 1000,
+            easing: 'easeOutElastic(1, .5)'
+        });
+    
+        anime({
+            targets: '#hero-text',
+            opacity: [0, 1],
+            translateY: [50, 0],
+            duration: 1000,
+            delay: 200,
+            easing: 'easeOutElastic(1, .5)'
+        });
+    
+        anime({
+            targets: '#hero-button',
+            opacity: [0, 1],
+            translateY: [50, 0],
+            duration: 1000,
+            delay: 400,
+            easing: 'easeOutElastic(1, .5)'
+        });
+    
+        anime({
+            targets: ['#model-info', '#model-interface'],
+            opacity: [0, 1],
+            translateY: [50, 0],
+            duration: 1000,
+            delay: anime.stagger(200),
+            easing: 'easeOutElastic(1, .5)'
+        });
+    
+        // Animate feature items with staggered delay
+        anime({
+            targets: '.feature-item',
+            opacity: [0, 1],
+            translateX: [-20, 0],
+            duration: 800,
+            delay: anime.stagger(100),
+            easing: 'easeOutQuad'
+        });
+    
+        // Image Upload and Preview
+        const preview = document.getElementById('preview');
+        const uploadPrompt = document.getElementById('upload-prompt');
+        const imageInput = document.getElementById('image-input');
+        const predictButton = document.getElementById('predict-button');
+        const predictionResult = document.getElementById('prediction-result');
+    
+        preview.addEventListener('click', () => imageInput.click());
+        
+        preview.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            preview.classList.add('dragover');
+            
+            // Add a subtle animation when dragging over
+            anime({
+                targets: preview,
+                scale: 1.02,
+                duration: 300,
+                easing: 'easeOutQuad'
+            });
+        });
+    
+        preview.addEventListener('dragleave', () => {
+            preview.classList.remove('dragover');
+            
+            // Reset the scale
+            anime({
+                targets: preview,
+                scale: 1,
+                duration: 300,
+                easing: 'easeOutQuad'
+            });
+        });
+    
+        preview.addEventListener('drop', (e) => {
+            e.preventDefault();
+            preview.classList.remove('dragover');
+            
+            // Reset the scale
+            anime({
+                targets: preview,
+                scale: 1,
+                duration: 300,
+                easing: 'easeOutQuad'
+            });
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            }
+        });
+    
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+    
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadPrompt.style.display = 'none';
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.classList.add('max-h-full', 'rounded-lg');
+                preview.innerHTML = '';
+                preview.appendChild(img);
+                predictButton.disabled = false;
+                
+                // Animate the image appearance
+                anime({
+                    targets: img,
+                    opacity: [0, 1],
+                    scale: [0.9, 1],
+                    duration: 500,
+                    easing: 'easeOutQuad'
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    
+        predictButton.addEventListener('click', async () => {
+            if (!imageInput.files[0]) {
+                predictionResult.innerHTML = 'Please select an image to analyze.';
+                return;
+            }
+
+            predictButton.disabled = true;
+            
+            // Animate the button
+            anime({
+                targets: predictButton,
+                scale: [1, 0.95, 1],
+                duration: 300,
+                easing: 'easeInOutQuad'
+            });
+            
+            predictionResult.innerHTML = '<div class="text-primary pulse">Analyzing image...</div>';
+
+            const formData = new FormData();
+            formData.append('file', imageInput.files[0]);
+
+            try {
+                // Step 1: Get prediction from skin cancer detection model
+                const predictResponse = await fetch('http://140.245.239.21:5000/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!predictResponse.ok) {
+                    throw new Error(`HTTP error! status: ${predictResponse.status}`);
+                }
+
+                const predictData = await predictResponse.json();
+                let predictedClass = predictData.class || predictData.predicted_class || predictData.prediction;
+                let confidence = predictData.confidence;
+
+                // Step 2: Display prediction results immediately
+                let resultHTML = `
+                    <div class="bg-gray-50 rounded-lg p-6 mt-4 result-card">
+                        <div class="text-xl font-semibold text-gray-900 mb-2">Analysis Results</div>
+                        <div class="space-y-2">
+                            <div class="text-gray-700">Predicted Class: <span class="font-semibold">${predictedClass}</span></div>
+                            <div class="text-gray-700">Confidence: <span class="font-semibold">${(confidence * 100).toFixed(2)}%</span></div>
+                            <div class="text-gray-700 mt-4">
+                                <span class="font-semibold">Summary: </span>
+                                <span class="text-primary pulse">Generating summary...</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                if (predictData.probabilities) {
+                    resultHTML += `
+                        <div class="text-sm text-gray-500 mt-2">
+                            Detailed Probabilities: ${JSON.stringify(predictData.probabilities)}
+                        </div>
+                    `;
+                }
+
+                predictionResult.innerHTML = resultHTML;
+                
+                // Animate the result card
+                const resultCard = predictionResult.querySelector('.result-card');
+                if (resultCard) {
+                    resultCard.classList.add('animate-in');
+                }
+
+                // Step 3: Fetch summary separately
+                try {
+                    const flaskResponse = await fetch('http://localhost:8000/langflow/summary', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            predicted_class: predictedClass,
+                            confidence: confidence
+                        })
+                    });
+
+                    if (!flaskResponse.ok) {
+                        const errorText = await flaskResponse.text();
+                        throw new Error(`Flask API error! status: ${flaskResponse.status}, Response: ${errorText}`);
+                    }
+
+                    const flaskData = await flaskResponse.json();
+                    const summary = flaskData.summary || 'No summary available.';
+                    console.log('Flask Response:', flaskData);
+
+                    // Update the summary section
+                    const summaryElement = predictionResult.querySelector('.text-primary.pulse');
+                    if (summaryElement) {
+                        summaryElement.classList.remove('pulse');
+                        summaryElement.textContent = summary;
+                    }
+
+                } catch (summaryError) {
+                    console.error('Error generating summary:', summaryError);
+                    const summaryElement = predictionResult.querySelector('.text-primary.pulse');
+                    if (summaryElement) {
+                        summaryElement.classList.remove('pulse');
+                        summaryElement.textContent = "Sorry, couldn't generate a summary. Please try again.";
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error during prediction:', error);
+                predictionResult.innerHTML = '<div class="text-red-500">Error during analysis. Please try again.</div>';
+            } finally {
+                predictButton.disabled = false;
+            }
+        });
+    
+        // Initialize particles and leaves when the page loads
+        window.addEventListener('load', function() {
+            createParticles();
+            createLeaves();
+        });
+    </script>
+</body>
+</html>
